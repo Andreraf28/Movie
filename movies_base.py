@@ -7,8 +7,28 @@ CREATE_KEYSPACE = """
 CREATE KEYSPACE IF NOT EXISTS movies
 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 """
-CREATE_TABLE_MOVIE_BY_TITLE = ""
-CREATE_TABLE_MOVIE_BY_GENRE = ""
+CREATE_TABLE_MOVIE_BY_TITLE = """
+CREATE TABLE IF NOT EXISTS movies.movie_by_title (
+    movie_id UUID,
+    title TEXT,
+    release_year INT,
+    genre TEXT,
+    rating FLOAT,
+    director TEXT,
+    PRIMARY KEY (title, release_year)
+);
+"""
+CREATE_TABLE_MOVIE_BY_GENRE = """
+CREATE TABLE IF NOT EXISTS movies.movie_by_genre (
+    movie_id UUID,
+    title TEXT,
+    release_year INT,
+    genre TEXT,
+    rating FLOAT,
+    director TEXT,
+    PRIMARY KEY (genre, rating, movie_id)
+) WITH CLUSTERING ORDER BY (rating DESC, movie_id ASC);
+"""
 INSERT_MOVIE_TITLE = ""
 INSERT_MOVIE_GENRE = ""
 DELETE_MOVIE_TITLE = ""
@@ -20,7 +40,9 @@ SELECT_BY_GENRE = ""
 # Funciones base
 # ==============================
 def create_keyspace_and_tables(session):
-    pass  
+    session.execute(CREATE_KEYSPACE)
+    session.execute(CREATE_TABLE_MOVIE_BY_TITLE)
+    session.execute(CREATE_TABLE_MOVIE_BY_GENRE) 
 
 def insert_movie(session, title, year, director, genre, rating):
     pass  
