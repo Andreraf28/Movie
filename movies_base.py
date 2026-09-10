@@ -38,8 +38,14 @@ INSERT_MOVIE_GENRE = """
 INSERT INTO movies.movie_by_genre (movie_id, title, release_year, director, genre, rating)
 VALUES (%s, %s, %s, %s, %s, %s);
 """
-DELETE_MOVIE_TITLE = ""
-DELETE_MOVIE_GENRE = ""
+DELETE_MOVIE_TITLE = """
+DELETE FROM movies.movie_by_title
+WHERE title = %s AND release_year = %s;
+"""
+DELETE_MOVIE_GENRE = """
+DELETE FROM movies.movie_by_genre
+WHERE genre = %s AND rating = %s AND movie_id = %s;
+"""
 SELECT_BY_TITLE = """
 SELECT movie_id, title, release_year, genre, rating, director
 FROM movies.movie_by_title
@@ -121,7 +127,32 @@ def update_movie_director(session, title, genre, new_director):
     print(f" Director actualizado a '{new_director}' en ambas tablas.")
 
 def delete_movie(session, title, genre, rating, release_year):
-    pass
+    # 1. Obtenemos el movie_id desde movie_by_title para poder borrar en movie_by_genre
+    row = session.execute(
+        "SELECT movie_id FROM movies.movie_by_title WHERE title = %s AND release_year = %s",
+        (title, int(release_year))
+    ).one()
+
+    # 2. Borrar de movie_by_title
+    session.execute(
+        "DELETE FROM movies.movie_by_title WHERE title = %s AND release_year = %s",
+        (title, int(release_year))
+    )
+
+    # 3. Borrar de movie_by_genre
+    if row:
+        session.execute(
+            "DELETE FROM movies.movie_by_genre WHERE genre = %s AND rating = %s AND movie_id = %s",
+            (genre, float(rating), row.movie_id)
+        )
+    else:
+        # Por si no existía en title pero sí en genre
+        session.execute(
+            "DELETE FROM movies.movie_by_genre WHERE genre = %s AND rating = %s",
+            (genre, float(rating))
+        )
+
+    print(f"\nPelícula '{title}' eliminada de ambas tablas.")
 # ==============================
 # Menú
 # ==============================
@@ -137,6 +168,7 @@ def main():
         print("2. Consultar por título")
         print("3. Consultar por género")
         print("4. Actualizar director")
+        print("5. Eliminar película")
         print("0. Salir")
         choice = input("Seleccione opción: ")
 
@@ -167,9 +199,12 @@ def main():
             rating = input("Rating: ")
             release_year = input("Año: ")
             delete_movie(session, title, genre, rating, release_year)
-        elif choice == '0':
-            # Cerrar conexión y salir
-            pass
+        elif choice == "0":
+            print("Cerrando sesión y conexión con Cassandra...")
+            session.shutdown()
+            cluster.shutdown()
+            print("Conexión cerrada.")
+            break
         else:
             print("Opción inválida")
             break
