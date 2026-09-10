@@ -1,4 +1,5 @@
 from cassandra.cluster import Cluster
+import uuid
 
 # ==============================
 # CQL Statements
@@ -29,8 +30,14 @@ CREATE TABLE IF NOT EXISTS movies.movie_by_genre (
     PRIMARY KEY (genre, rating, movie_id)
 ) WITH CLUSTERING ORDER BY (rating DESC, movie_id ASC);
 """
-INSERT_MOVIE_TITLE = ""
-INSERT_MOVIE_GENRE = ""
+INSERT_MOVIE_TITLE = """
+INSERT INTO movies.movie_by_title (movie_id, title, release_year, director, genre, rating)
+VALUES (%s, %s, %s, %s, %s, %s);
+"""
+INSERT_MOVIE_GENRE = """
+INSERT INTO movies.movie_by_genre (movie_id, title, release_year, director, genre, rating)
+VALUES (%s, %s, %s, %s, %s, %s);
+"""
 DELETE_MOVIE_TITLE = ""
 DELETE_MOVIE_GENRE = ""
 SELECT_BY_TITLE = ""
@@ -45,7 +52,20 @@ def create_keyspace_and_tables(session):
     session.execute(CREATE_TABLE_MOVIE_BY_GENRE) 
 
 def insert_movie(session, title, year, director, genre, rating):
-    pass  
+    movie_id = uuid.uuid4()
+    
+    # Inserción en movie_by_title
+    session.execute(
+        INSERT_MOVIE_TITLE,
+        (movie_id, title, year, director, genre, float(rating))
+    )
+    
+    # Inserción en movie_by_genre
+    session.execute(
+        INSERT_MOVIE_GENRE,
+        (movie_id, title, year, director, genre, float(rating))
+    )
+    print(f" Película '{title}' ({year}) agregada a ambas tablas.")  
 
 def query_by_title(session, title, year):
     pass  
