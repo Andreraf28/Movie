@@ -96,7 +96,29 @@ def query_by_genre(session, genre):
         print(f"\nNo se encontraron películas para el género '{genre}'.")
 
 def update_movie_director(session, title, genre, new_director):
-    pass  
+    # 1. Obtener la información completa para conocer las claves
+    row = session.execute(
+        "SELECT release_year, rating, movie_id FROM movies.movie_by_title WHERE title = %s", 
+        (title,)
+    ).one()
+    
+    if not row:
+        print(f"No se encontró la película '{title}'.")
+        return
+
+    # 2. Actualizar en movie_by_title
+    session.execute(
+        "UPDATE movies.movie_by_title SET director = %s WHERE title = %s AND release_year = %s",
+        (new_director, title, row.release_year)
+    )
+
+    # 3. Actualizar en movie_by_genre
+    # Si definiste PK (genre, rating, movie_id):
+    session.execute(
+        "UPDATE movies.movie_by_genre SET director = %s WHERE genre = %s AND rating = %s AND movie_id = %s",
+        (new_director, genre, row.rating, row.movie_id)
+    )
+    print(f" Director actualizado a '{new_director}' en ambas tablas.")
 
 def delete_movie(session, title, genre, rating, release_year):
     pass
