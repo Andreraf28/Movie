@@ -40,8 +40,16 @@ VALUES (%s, %s, %s, %s, %s, %s);
 """
 DELETE_MOVIE_TITLE = ""
 DELETE_MOVIE_GENRE = ""
-SELECT_BY_TITLE = ""
-SELECT_BY_GENRE = ""
+SELECT_BY_TITLE = """
+SELECT movie_id, title, release_year, genre, rating, director
+FROM movies.movie_by_title
+WHERE title = %s AND release_year = %s;
+"""
+SELECT_BY_GENRE = """
+SELECT title, rating, release_year, director
+FROM movies.movie_by_genre
+WHERE genre = %s;
+"""
 
 # ==============================
 # Funciones base
@@ -68,10 +76,24 @@ def insert_movie(session, title, year, director, genre, rating):
     print(f" Película '{title}' ({year}) agregada a ambas tablas.")  
 
 def query_by_title(session, title, year):
-    pass  
+    rows = session.execute(SELECT_BY_TITLE, (title, int(year)))
+    row = rows.one()
+
+    if row:
+        print(f"\n{row.title} ({row.release_year}) | Director: {row.director} | Género: {row.genre} | Rating: {row.rating}")
+    else:
+        print("\nPelícula no encontrada.")
 
 def query_by_genre(session, genre):
-    pass  
+    rows = session.execute(SELECT_BY_GENRE, (genre,))
+    results = list(rows)
+
+    if results:
+        print(f"\nPelículas del género '{genre}':")
+        for row in results:
+            print(f"- {row.title} ({row.release_year}) — {row.rating}")
+    else:
+        print(f"\nNo se encontraron películas para el género '{genre}'.")
 
 def update_movie_director(session, title, genre, new_director):
     pass  
